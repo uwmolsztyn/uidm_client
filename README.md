@@ -6,6 +6,14 @@ pip install git+https://github.com/uwmolsztyn/uidm_client.git@0.1
 ```
 
 ## Examples
+
+To use the UIDM Client you have to provide two environment variables:
+
+```bash
+export UIDM_API=_uidm_url_
+export UIDM_ACCESS_TOKEN=__access_token__
+```
+
 ### Identities
 
 How to get identity object:
