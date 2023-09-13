@@ -1,4 +1,9 @@
-# very simple uidm client
+# A Very Simple UIDM Client
+
+## Installation
+```bash
+pip install git+https://github.com/uwmolsztyn/uidm_client.git@0.1
+```
 
 ## Examples
 ### Identities
