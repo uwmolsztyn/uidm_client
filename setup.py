@@ -5,7 +5,7 @@ setup(
     version='0.1',
     python_requires=">=3.7",
     package_dir={"": "src"},
-    packages=find_packages(),
+    packages=["uidm_client"],
     install_requires=[
         "requests"
     ],
