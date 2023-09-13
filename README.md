@@ -23,15 +23,34 @@ from uidm_client import identities
 
 # get by identity ID
 identity = identities.get("0352a24c-afc1-4867-913e-8fd85ea7191d")
-print(f'{instance.firstname} {instance.lastname}')
+print(f'{identity.firstname} {identity.lastname}')
 
 # get by upn
 identity = identities.get(upn="identity_upn_value")
-print(f'{instance.firstname} {instance.lastname}')
+print(f'{identity.firstname} {identity.lastname}')
 
 # get by email
 identity = identities.get(email="identity_email@example.com")
-print(f'{instance.firstname} {instance.lastname}')
+print(f'{identity.firstname} {identity.lastname}')
+```
+
+How to filter identities:
+
+```python
+from uidm_client import identities
+for identity in identities.filter(firstname__startswith="Anna"):
+    print(f'{identity.firstname} {identity.lastname}')
+```
+
+You can use multiple filters:
+
+```python
+from uidm_client import identities
+for identity in identities.filter(firstname="Anna", lastname="Kowalska"):
+    print(f'{identity.firstname} {identity.lastname}')
+
+for identity in identities.filter(firstname__contains="Anna", lastname__startswith="Kowalska"):
+    print(f'{identity.firstname} {identity.lastname}')
 ```
 
 How to get identity unit:

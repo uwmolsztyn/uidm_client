@@ -15,11 +15,25 @@ headers = {
 }
 
 
+def dict_to_query_params(params: dict):
+    return "&".join([f'{key}={value}' for key, value in params.items()])
+
+
+def viewset_request(url):
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    dataset = response.json()
+    count = dataset.get('count', 0)
+    next_url = dataset.get('next', False)
+    results = dataset.get('results', [])
+    return count, results, next_url,
+
+
 class ApiEndpoint:
 
     API_URL = None
 
-    def get_by_guid(self, guid):
+    def client_get_by_guid(self, guid):
         response = requests.get(f'{self.API_URL}{guid}/', headers=headers)
         response.raise_for_status()
         return response.json()
@@ -42,9 +56,8 @@ class IdentitiesEndpoint(ApiEndpoint):
         raise ValueError
     
     def get_by_guid(self, guid) -> Identity:
-        response = requests.get(f'{API_IDENTITIES_URL}{guid}/', headers=headers)
-        response.raise_for_status()
-        return identity_instance(response.json())
+        response = super().client_get_by_guid(guid=guid)
+        return identity_instance(response)
     
     def get_by_field(self, **kwargs) -> Identity:
         query = [f'{key}={value}' for key, value in kwargs.items()]
@@ -60,6 +73,26 @@ class IdentitiesEndpoint(ApiEndpoint):
         results = result.get('results', None)
         item, *_ = results
         return self.get_by_guid(item.get('id'))
+    
+    def all(self, limit=25):
+        return self.filter(limit=limit)
+    
+    def filter(self, limit=25, **kwargs):
+        query = dict_to_query_params({'limit': limit, **kwargs})
+        if len(query):
+            query = '?' + query
+        next_url = f'{self.API_URL}{query}'
+        while True:
+            if not next_url:
+                break
+            count, results, next_url = viewset_request(next_url)
+            if not count:
+                return []
+            if not len(results):
+                break
+            for data in results:
+                yield identity_instance(data)
+
 
 
 class GroupsEndpoint(ApiEndpoint):
@@ -78,7 +111,7 @@ class UnitsEndpoint(ApiEndpoint):
         if len(args):
             guid, *_ = args
             if not guid:
-                raise ValueError
+                return None
             if isinstance(guid, EntityEndpoint):
                 guid = guid.id
             return self.get_by_guid(guid=guid)
@@ -87,8 +120,21 @@ class UnitsEndpoint(ApiEndpoint):
         raise ValueError
 
     def get_by_guid(self, guid)-> Unit:
-        response = super().get_by_guid(guid=guid)
+        response = super().client_get_by_guid(guid=guid)
         return unit_instance(response)
+    
+    def all(self, limit=25):
+        next_url = f'{self.API_URL}?limit=25'
+        while True:
+            if not next_url:
+                break
+            count, results, next_url = viewset_request(next_url)
+            if not count:
+                return []
+            if not len(results):
+                break
+            for data in results:
+                yield unit_instance(data)
 
 
 class FacultiesEndpoint(UnitsEndpoint):
