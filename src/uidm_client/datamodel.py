@@ -94,4 +94,8 @@ class Unit(EntityDatamodel):
 
 def unit_instance(data:dict) -> Unit:
     data = {key: value for key, value in data.items() if key in Unit.__annotations__}
+    if not data.get('branch'):
+        data['branch'] = None
+    if not data.get('units'):
+        data['units'] = None
     return Unit(**data)

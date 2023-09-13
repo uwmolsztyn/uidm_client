@@ -8,6 +8,8 @@ API_ACCESS_TOKEN = os.getenv('UIDM_ACCESS_TOKEN', False)
 API_BASE_URL = os.getenv('UIDM_API', False)
 API_IDENTITIES_URL = f'{API_BASE_URL}/identities/'
 API_UNITS_URL = f'{API_BASE_URL}/units/'
+API_FACULTIES_URL = f'{API_BASE_URL}/faculties/'
+
 
 headers = {
     'Authorization': f'Bearer {API_ACCESS_TOKEN}',
@@ -15,11 +17,18 @@ headers = {
 }
 
 
+def param_value(key, value):
+    if isinstance(value, list):
+        value = ",".join(value)
+    return f'{key}={value}'
+
+
 def dict_to_query_params(params: dict):
-    return "&".join([f'{key}={value}' for key, value in params.items()])
+    return "&".join([f'{param_value(key, value)}' for key, value in params.items()])
 
 
 def viewset_request(url):
+    # print(f'fetching: {url}')
     response = requests.get(url, headers=headers)
     response.raise_for_status()
     dataset = response.json()
@@ -60,23 +69,21 @@ class IdentitiesEndpoint(ApiEndpoint):
         return identity_instance(response)
     
     def get_by_field(self, **kwargs) -> Identity:
-        query = [f'{key}={value}' for key, value in kwargs.items()]
-        query = "&".join(query)
-        response = requests.get(f'{API_IDENTITIES_URL}?{query}', headers=headers)
-        response.raise_for_status()
-        result = response.json()
-        count = result.get('count', 0)
+        query = dict_to_query_params(kwargs)
+        if len(query):
+            query = '?' + query
+        url = f'{self.API_URL}{query}'
+        count, results, *_ = viewset_request(url)
         if not count:
             return None
         elif count > 1:
             raise ValueError
-        results = result.get('results', None)
         item, *_ = results
         return self.get_by_guid(item.get('id'))
     
     def all(self, limit=25):
         return self.filter(limit=limit)
-    
+
     def filter(self, limit=25, **kwargs):
         query = dict_to_query_params({'limit': limit, **kwargs})
         if len(query):
@@ -111,20 +118,39 @@ class UnitsEndpoint(ApiEndpoint):
         if len(args):
             guid, *_ = args
             if not guid:
-                return None
+                raise None
             if isinstance(guid, EntityEndpoint):
                 guid = guid.id
             return self.get_by_guid(guid=guid)
-        # elif len(kwargs):
-        #     return self.get_by_field(**kwargs)
+        elif len(kwargs):
+            return self.get_by_field(**kwargs)
         raise ValueError
 
     def get_by_guid(self, guid)-> Unit:
         response = super().client_get_by_guid(guid=guid)
         return unit_instance(response)
     
+    def get_by_field(self, **kwargs) -> Unit:
+        query = dict_to_query_params(kwargs)
+        if len(query):
+            query = '?' + query
+        url = f'{self.API_URL}{query}'
+        count, results, *_ = viewset_request(url)
+        if not count:
+            return None
+        elif count > 1:
+            raise ValueError
+        item, *_ = results
+        return self.get_by_guid(item.get('id'))
+    
     def all(self, limit=25):
-        next_url = f'{self.API_URL}?limit=25'
+        return self.filter(limit=limit)
+
+    def filter(self, limit=25, **kwargs):
+        query = dict_to_query_params({'limit': limit, **kwargs})
+        if len(query):
+            query = '?' + query
+        next_url = f'{self.API_URL}{query}'
         while True:
             if not next_url:
                 break
@@ -138,4 +164,5 @@ class UnitsEndpoint(ApiEndpoint):
 
 
 class FacultiesEndpoint(UnitsEndpoint):
-    pass
+
+    API_URL = API_FACULTIES_URL
