@@ -81,10 +81,10 @@ class IdentitiesEndpoint(ApiEndpoint):
         item, *_ = results
         return self.get_by_guid(item.get('id'))
     
-    def all(self, limit=25):
+    def all(self, limit: int=25):
         return self.filter(limit=limit)
 
-    def filter(self, limit=25, **kwargs):
+    def filter(self, limit: int=25, **kwargs):
         query = dict_to_query_params({'limit': limit, **kwargs})
         if len(query):
             query = '?' + query
@@ -100,6 +100,24 @@ class IdentitiesEndpoint(ApiEndpoint):
             for data in results:
                 yield identity_instance(data)
 
+    def members(self, unit: Unit, limit: int=25, **kwargs):
+        members = unit.members
+        if not members:
+            return []
+        query = dict_to_query_params({'limit': limit, **kwargs})
+        if len(query):
+            query = '&' + query
+        next_url = f'{members.url}{query}'
+        while True:
+            if not next_url:
+                break
+            count, results, next_url = viewset_request(next_url)
+            if not count:
+                return []
+            if not len(results):
+                break
+            for data in results:
+                yield identity_instance(data)
 
 
 class GroupsEndpoint(ApiEndpoint):

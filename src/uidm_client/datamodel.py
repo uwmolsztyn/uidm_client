@@ -77,6 +77,12 @@ def identity_instance(data:dict) -> Identity:
 
 
 @dataclass
+class UnitMembers:
+    count: int
+    url: str
+
+
+@dataclass
 class Unit(EntityDatamodel):
     id: str
     url: str
@@ -86,7 +92,7 @@ class Unit(EntityDatamodel):
     name: str
     type: str|None
     principal: dict|None
-    members: dict|None
+    members: UnitMembers|None
     parent: dict|None
     branch: list|None
     units: list|None
@@ -98,4 +104,6 @@ def unit_instance(data:dict) -> Unit:
         data['branch'] = None
     if not data.get('units'):
         data['units'] = None
+    if data.get('members'):
+        data['members'] = UnitMembers(**data.get('members'))
     return Unit(**data)

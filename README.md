@@ -2,7 +2,7 @@
 
 ## Installation
 ```bash
-pip install git+https://github.com/uwmolsztyn/uidm_client.git@0.3
+pip install git+https://github.com/uwmolsztyn/uidm_client.git@0.4
 ```
 
 ## Examples
@@ -132,6 +132,26 @@ for unit in units.filter(name__contains="Wydział", ordering="name"):
 # descending
 for unit in units.filter(name__startswith="Wydział", ordering="-name"):
     print(f'{unit.name}')
+```
+
+How to fetch unit's members:
+
+```python
+from uidm_client import identities, units
+
+unit = units.get("00-000-000")
+for member in identities.members(unit):
+    print(f'{member.firstname} {member.lastname}')
+```
+
+You can filter unit members just like identites endpoint:
+
+```python
+from uidm_client import identities, units
+
+unit = units.get("00-000-000")
+for member in identities.members(unit, lastname__contains="Kowal", ordering="-firstname", limit=100):
+    print(f'{member.firstname} {member.lastname}')
 ```
 
 
