@@ -1,7 +1,8 @@
 import os
 import requests
-from .datamodel import (EntityEndpoint, Identity, Unit,
-                        identity_instance, unit_instance,)
+from .const import GROUP_EMPLOYEES, GROUP_FORMER_EMPLOYEES, VERSION
+from .datamodel import (EntityEndpoint, Identity, Unit, Group,
+                        identity_instance, unit_instance, group_instance,)
 
 
 API_ACCESS_TOKEN = os.getenv('UIDM_ACCESS_TOKEN', False)
@@ -9,11 +10,13 @@ API_BASE_URL = os.getenv('UIDM_API', False)
 API_IDENTITIES_URL = f'{API_BASE_URL}/identities/'
 API_UNITS_URL = f'{API_BASE_URL}/units/'
 API_FACULTIES_URL = f'{API_BASE_URL}/faculties/'
+API_GROUPS_URL = f'{API_BASE_URL}/groups/'
 
 
 headers = {
     'Authorization': f'Bearer {API_ACCESS_TOKEN}',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'User-Agent': f'UIDM Client {VERSION}'
 }
 
 
@@ -100,8 +103,8 @@ class IdentitiesEndpoint(ApiEndpoint):
             for data in results:
                 yield identity_instance(data)
 
-    def members(self, unit: Unit, limit: int=25, **kwargs):
-        members = unit.members
+    def members(self, item: Group|Unit, limit: int=25, **kwargs):
+        members = item.members
         if not members:
             return []
         query = dict_to_query_params({'limit': limit, **kwargs})
@@ -119,9 +122,71 @@ class IdentitiesEndpoint(ApiEndpoint):
             for data in results:
                 yield identity_instance(data)
 
+    def employees(self, limit: int=25, **kwargs):
+        return self.filter(limit=limit, **{**kwargs, 'groups__in': GROUP_EMPLOYEES})
+
+    def former_employees(self, limit: int=25, **kwargs):
+        return self.filter(limit=limit, **{**kwargs, 'groups__in': GROUP_FORMER_EMPLOYEES})
+    
+    def subordinates(self, identity: Identity, **kwargs):
+        units = UnitsEndpoint()
+        ids = [unit.id for unit in units.filter(principal=identity.id)]
+        if not len(ids):
+            return []
+        return self.filter(**{**kwargs, 'guid__notequals': identity.id, 'groups__in': GROUP_EMPLOYEES, 'units__in': ids})
+
 
 class GroupsEndpoint(ApiEndpoint):
-    pass
+
+    API_URL = API_GROUPS_URL
+
+    def get(self, *args, **kwargs) -> Group:
+        if len(args):
+            guid, *_ = args
+            if not guid:
+                raise None
+            if isinstance(guid, EntityEndpoint):
+                guid = guid.id
+            return self.get_by_guid(guid=guid)
+        elif len(kwargs):
+            return self.get_by_field(**kwargs)
+        raise ValueError
+
+    def get_by_guid(self, guid)-> Group:
+        response = super().client_get_by_guid(guid=guid)
+        return group_instance(response)
+    
+    def get_by_field(self, **kwargs) -> Group:
+        query = dict_to_query_params(kwargs)
+        if len(query):
+            query = '?' + query
+        url = f'{self.API_URL}{query}'
+        count, results, *_ = viewset_request(url)
+        if not count:
+            return None
+        elif count > 1:
+            raise ValueError
+        item, *_ = results
+        return self.get_by_guid(item.get('id'))
+
+    def all(self, limit=25):
+        return self.filter(limit=limit)
+
+    def filter(self, limit=25, **kwargs):
+        query = dict_to_query_params({'limit': limit, **kwargs})
+        if len(query):
+            query = '?' + query
+        next_url = f'{self.API_URL}{query}'
+        while True:
+            if not next_url:
+                break
+            count, results, next_url = viewset_request(next_url)
+            if not count:
+                return []
+            if not len(results):
+                break
+            for data in results:
+                yield group_instance(data)
 
 
 class RolesEndpoint(ApiEndpoint):
@@ -179,6 +244,14 @@ class UnitsEndpoint(ApiEndpoint):
                 break
             for data in results:
                 yield unit_instance(data)
+    
+    def descendants(self, unit: Unit, limit=25, **kwargs):
+        return self.filter(limit=limit, **{
+            'ordering': 'path',
+            **kwargs,
+            'idn__notequals': unit.idn,
+            'path__startswith': unit.path
+        })
 
 
 class FacultiesEndpoint(UnitsEndpoint):

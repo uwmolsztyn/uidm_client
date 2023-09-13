@@ -1,6 +1,6 @@
 [project]
 name = "uidm_client"
-version = "0.1"
+version = "0.5"
 authors = [
   { name="Dominik Łukasik", email="dmcode@outlook.com" },
 ]

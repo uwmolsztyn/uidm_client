@@ -2,7 +2,7 @@
 
 ## Installation
 ```bash
-pip install git+https://github.com/uwmolsztyn/uidm_client.git@0.4
+pip install git+https://github.com/uwmolsztyn/uidm_client.git@0.5
 ```
 
 ## Examples
@@ -74,6 +74,121 @@ supervisor = identities.get(instance.supervisor)
 print(f'{instance.firstname} {instance.lastname} - supervisor: {supervisor.firstname} {supervisor.lastname}')
 ```
 
+How to get current employees:
+```python
+from uidm_client import identities
+for identity in identities.employees():
+    print(f'{identity.firstname} {identity.lastname}')
+
+# you can use filtering just like identities endpoint
+for identity in identities.employees(ordering="-lastname"):
+    print(f'{identity.firstname} {identity.lastname}')
+```
+
+How to get all former employees:
+
+```python
+from uidm_client import identities
+
+for identity in identities.former_employees():
+    print(f'{identity.firstname} {identity.lastname}')
+
+# you can use filtering just like identities endpoint
+for identity in identities.former_employees(ordering="firstname"):
+    print(f'{identity.firstname} {identity.lastname}')
+```
+
+How to get subordinates:
+
+```python
+from uidm_client import identities
+
+identity = identities.get("0352a24c-afc1-4867-913e-8fd85ea7191d")
+print(f'{identity.firstname} {identity.lastname} subordinates:')
+for person in identities.subordinates(identity, ordering='lastname'):
+    print(f'{person.firstname} {person.lastname}')
+```
+
+
+### Groups
+
+How to get group object:
+
+```python
+from uidm_client import groups
+
+# get by group ID
+group = groups.get("00-000-000")
+print(f'{group.name}')
+
+# get by group IDN
+group = groups.get(idn="00.000.000")
+print(f'{group.name}')
+
+# get by group path
+group = groups.get(path="/path/to/group")
+print(f'{group.name}')
+```
+
+How to filter groups:
+
+You can filter by fields:
+* id (exact, in)
+* idn (exact, notequals, contains, notcontains, startswith, endswith, in)
+* path (exact, notequals, contains, notcontains, startswith, notstartswith, endswith, in)
+* name (exact, notequals, contains, notcontains, startswith, endswith)
+* type (exact, notequals, contains, notcontains, startswith, endswith, in)
+* parent (exact)
+* principal (exact, in)
+
+```python
+from uidm_client import groups
+for group in groups.filter(name__contains="studenci", limit=20):
+    print(f'{group.name}')
+
+for unit in groups.filter(name__startswith="pracownicy"):
+    print(f'{group.name}')
+
+for unit in groups.filter(idn__in=['idn1', 'idn2', 'idn3', ...]):
+    print(f'{group.name}')
+```
+
+How to ordering groups:
+
+You can order by fields: name, idn, path
+
+```python
+from uidm_client import groups
+
+# ascending
+for group in groups.filter(name__contains="pracownicy", ordering="name"):
+    print(f'{group.name}')
+
+# descending
+for group in groups.filter(name__startswith="pracownicy", ordering="-name"):
+    print(f'{group.name}')
+```
+
+How to fetch group's members:
+
+```python
+from uidm_client import identities, groups
+
+group = groups.get("00-000-000")
+for member in identities.members(group):
+    print(f'{member.firstname} {member.lastname}')
+```
+
+You can filter group members just like identites endpoint:
+
+```python
+from uidm_client import identities, groups
+
+group = groups.get("00-000-000")
+for member in identities.members(group, lastname__startswith="Kowal", ordering="firstname", limit=10):
+    print(f'{member.firstname} {member.lastname}')
+```
+
 
 ### Units
 
@@ -100,9 +215,9 @@ How to filter units:
 You can filter by fields:
 * id (exact, in)
 * idn (exact, notequals, contains, notcontains, startswith, endswith, in)
-* path (exact, notequals, contains, notcontains', startswith, notstartswith, endswith, in)
-* name (exact, notequals, contains, notcontains', startswith, endswith)
-* type (exact, notequals, contains, notcontains', startswith, endswith, in)
+* path (exact, notequals, contains, notcontains, startswith, notstartswith, endswith, in)
+* name (exact, notequals, contains, notcontains, startswith, endswith)
+* type (exact, notequals, contains, notcontains, startswith, endswith, in)
 * parent (exact)
 * principal (exact, in)
 
@@ -152,6 +267,16 @@ from uidm_client import identities, units
 unit = units.get("00-000-000")
 for member in identities.members(unit, lastname__contains="Kowal", ordering="-firstname", limit=100):
     print(f'{member.firstname} {member.lastname}')
+```
+
+How to get unit's descendants:
+
+```python
+from uidm_client import units
+# you can ordering and filtering just like identities endpoint
+unit = units.get("00-000-000")
+for unit in units.descendants(unit, ordering="name"):
+    print(f'{unit.name}')
 ```
 
 

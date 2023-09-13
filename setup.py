@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='uidm_client',
-    version='0.1',
+    version='0.5',
     python_requires=">=3.7",
     package_dir={"": "src"},
     packages=["uidm_client"],
