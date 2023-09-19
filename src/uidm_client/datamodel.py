@@ -1,10 +1,15 @@
 from dataclasses import dataclass
+import re
+
+
+unit_pattern = r'\d{2}\.\d{3}\.\d{3}'
 
 
 @dataclass
 class EntityEndpoint:
     id: str
     url: str
+
 
 @dataclass
 class IdentityRole(EntityEndpoint):
@@ -15,11 +20,13 @@ class IdentityRole(EntityEndpoint):
 @dataclass
 class IdentityGroup(EntityEndpoint):
     idn: str
+    name: str
 
 
 @dataclass
 class IdentityUnit(EntityEndpoint):
     idn: str
+    name: str
 
 
 @dataclass
@@ -27,9 +34,21 @@ class IdentitySupervisor(EntityEndpoint):
     pass
 
 
+# new
+
 @dataclass
 class EntityDatamodel:
     id: str
+
+
+@dataclass
+class HyperlinkedStructureEntity(EntityDatamodel):
+    id: str
+    url: str
+    idn: str
+    name: str
+
+# ###
 
 
 @dataclass
@@ -52,16 +71,30 @@ class Identity(EntityDatamodel):
     unit: IdentityUnit|None
     supervisor: IdentitySupervisor|None
 
+    _endpoints: dict|None
+
     def is_member(self, id: str) -> bool:
         return len(list(filter(lambda g: g.id, self.groups))) > 0
     
     @property
     def is_employee(self) -> bool:
         return self.is_member('pracownicy')
+    
+    def vertical_units(self):
+        if self.unit and self._endpoints:
+            unit = self._endpoints.get('units').get(self.unit)
+            if unit and isinstance(unit.branch, list):
+                return [*filter(lambda x: re.match(unit_pattern, x.idn), reversed(unit.branch)), unit]
+        return []
+    
+    def vertical_units_names(self):
+        units = [*map(lambda u: u.name, self.vertical_units())]
+        if len(units):
+            return ", ".join(units)
+        return None
 
 
-
-def identity_instance(data:dict) -> Identity:
+def identity_instance(data:dict, endpoints:dict|None = None) -> Identity:
     data = {key: value for key, value in data.items() if key in Identity.__annotations__}
     if data.get('job_position'):
         data['job_position'] = IdentityRole(**data["job_position"])
@@ -73,6 +106,8 @@ def identity_instance(data:dict) -> Identity:
         data['supervisor'] = IdentitySupervisor(**data.get('supervisor'))
     if data.get('unit'):
         data['unit'] = IdentityUnit(**data.get('unit'))
+    if endpoints:
+        data['_endpoints'] = endpoints
     return Identity(**data)
 
 
@@ -106,10 +141,17 @@ class Unit(StructureEntity):
 
 def unit_instance(data:dict) -> Unit:
     data = {key: value for key, value in data.items() if key in Unit.__annotations__}
-    if not data.get('branch'):
+
+    if data.get('branch'):
+        data['branch'] = list(map(lambda x: HyperlinkedStructureEntity(**x), data.get('branch')))
+    elif not data.get('branch'):
         data['branch'] = None
-    if not data.get('units'):
+    
+    if data.get('units'):
+        data['units'] = list(map(lambda x: HyperlinkedStructureEntity(**x), data.get('units')))
+    elif not data.get('units'):
         data['units'] = None
+    
     if data.get('members'):
         data['members'] = StructureMembers(**data.get('members'))
     return Unit(**data)

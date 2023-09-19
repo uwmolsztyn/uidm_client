@@ -2,7 +2,7 @@
 
 ## Installation
 ```bash
-pip install git+https://github.com/uwmolsztyn/uidm_client.git@0.5
+pip install git+https://github.com/uwmolsztyn/uidm_client.git@0.6
 ```
 
 ## Examples

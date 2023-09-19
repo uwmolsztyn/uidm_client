@@ -45,6 +45,9 @@ class ApiEndpoint:
 
     API_URL = None
 
+    def __init__(self, endpoints: dict|None = None) -> None:
+        self.endpoints = endpoints
+
     def client_get_by_guid(self, guid):
         response = requests.get(f'{self.API_URL}{guid}/', headers=headers)
         response.raise_for_status()
@@ -59,7 +62,7 @@ class IdentitiesEndpoint(ApiEndpoint):
         if len(args):
             guid, *_ = args
             if not guid:
-                raise ValueError
+                return None
             if isinstance(guid, EntityEndpoint):
                 guid = guid.id
             return self.get_by_guid(guid=guid)
@@ -69,7 +72,7 @@ class IdentitiesEndpoint(ApiEndpoint):
     
     def get_by_guid(self, guid) -> Identity:
         response = super().client_get_by_guid(guid=guid)
-        return identity_instance(response)
+        return identity_instance(response, endpoints=self.endpoints)
     
     def get_by_field(self, **kwargs) -> Identity:
         query = dict_to_query_params(kwargs)
@@ -101,8 +104,8 @@ class IdentitiesEndpoint(ApiEndpoint):
             if not len(results):
                 break
             for data in results:
-                yield identity_instance(data)
-
+                yield identity_instance(data, endpoints=self.endpoints)
+    
     def members(self, item: Group|Unit, limit: int=25, **kwargs):
         members = item.members
         if not members:
@@ -120,7 +123,7 @@ class IdentitiesEndpoint(ApiEndpoint):
             if not len(results):
                 break
             for data in results:
-                yield identity_instance(data)
+                yield identity_instance(data, endpoints=self.endpoints)
 
     def employees(self, limit: int=25, **kwargs):
         return self.filter(limit=limit, **{**kwargs, 'groups__in': GROUP_EMPLOYEES})
@@ -144,7 +147,7 @@ class GroupsEndpoint(ApiEndpoint):
         if len(args):
             guid, *_ = args
             if not guid:
-                raise None
+                return None
             if isinstance(guid, EntityEndpoint):
                 guid = guid.id
             return self.get_by_guid(guid=guid)
@@ -201,7 +204,7 @@ class UnitsEndpoint(ApiEndpoint):
         if len(args):
             guid, *_ = args
             if not guid:
-                raise None
+                return None
             if isinstance(guid, EntityEndpoint):
                 guid = guid.id
             return self.get_by_guid(guid=guid)
