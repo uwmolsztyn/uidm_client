@@ -1,3 +1,3 @@
-VERSION = 0.6
+VERSION = 0.7
 GROUP_EMPLOYEES = 'pracownicy'
 GROUP_FORMER_EMPLOYEES = 'byli-pracownicy'

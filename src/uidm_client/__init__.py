@@ -1,4 +1,4 @@
-from .endpoints import IdentitiesEndpoint, GroupsEndpoint, RolesEndpoint, UnitsEndpoint, FacultiesEndpoint
+from .endpoints import IdentitiesEndpoint, GroupsEndpoint, RolesEndpoint, UnitsEndpoint, FacultiesEndpoint, DomainEndpoint
 
 _endpoints = {}
 
@@ -7,5 +7,7 @@ groups = GroupsEndpoint()
 roles = RolesEndpoint()
 units = UnitsEndpoint()
 faculties = FacultiesEndpoint()
+domain = DomainEndpoint()
 
 _endpoints['units'] = units
+_endpoints['domain'] = domain

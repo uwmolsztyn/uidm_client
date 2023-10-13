@@ -1,4 +1,5 @@
 import os
+import json
 import requests
 from .const import GROUP_EMPLOYEES, GROUP_FORMER_EMPLOYEES, VERSION
 from .datamodel import (EntityEndpoint, Identity, Unit, Group,
@@ -11,6 +12,7 @@ API_IDENTITIES_URL = f'{API_BASE_URL}/identities/'
 API_UNITS_URL = f'{API_BASE_URL}/units/'
 API_FACULTIES_URL = f'{API_BASE_URL}/faculties/'
 API_GROUPS_URL = f'{API_BASE_URL}/groups/'
+API_DOMAIN_URL = f'{API_BASE_URL}/domain/'
 
 
 headers = {
@@ -50,6 +52,12 @@ class ApiEndpoint:
 
     def client_get_by_guid(self, guid):
         response = requests.get(f'{self.API_URL}{guid}/', headers=headers)
+        response.raise_for_status()
+        return response.json()
+    
+    def put(self, path, **kwargs):
+        data = json.dumps(kwargs)
+        response = requests.put(f'{self.API_URL}{path}', data=data, headers=headers)
         response.raise_for_status()
         return response.json()
 
@@ -260,3 +268,14 @@ class UnitsEndpoint(ApiEndpoint):
 class FacultiesEndpoint(UnitsEndpoint):
 
     API_URL = API_FACULTIES_URL
+
+
+class DomainEndpoint(ApiEndpoint):
+    
+    API_URL = API_DOMAIN_URL
+
+    def password_reset(self, upn, hash):
+        return self.put('pwdreset/employee/', **{
+            'upn': upn,
+            'reset_hash': hash
+        })
