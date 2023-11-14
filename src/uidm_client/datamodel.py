@@ -70,6 +70,7 @@ class Identity(EntityDatamodel):
     groups: list|None
     unit: IdentityUnit|None
     supervisor: IdentitySupervisor|None
+    domain_meta: list|None
 
     _endpoints: dict|None
 
