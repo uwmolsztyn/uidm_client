@@ -1,4 +1,6 @@
+from __future__ import annotations
 from dataclasses import dataclass
+from .const import EMPLOYEE_DOMAIN
 import re
 
 
@@ -93,6 +95,14 @@ class Identity(EntityDatamodel):
         if len(units):
             return ", ".join(units)
         return None
+    
+    def domain_login(self, domain:str=EMPLOYEE_DOMAIN):
+        if not self.domain_meta:
+            return None
+        meta = list(filter(lambda x: x['domain_login'].endswith(domain), self.domain_meta))
+        if not meta:
+            return None
+        return meta[0]['domain_login']
 
 
 def identity_instance(data:dict, endpoints:dict|None = None) -> Identity:
