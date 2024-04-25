@@ -59,6 +59,7 @@ class Identity(EntityDatamodel):
     guid: str
     url: str
     active: bool
+    pesel: str|None
     firstname: str
     middlename: str|None
     lastname: str
@@ -73,8 +74,11 @@ class Identity(EntityDatamodel):
     unit: IdentityUnit|None
     supervisor: IdentitySupervisor|None
     domain_meta: list|None
-
+    
     _endpoints: dict|None
+
+    def __str__(self):
+        return f'{self.firstname} {self.lastname}'
 
     def is_member(self, id: str) -> bool:
         return len(list(filter(lambda g: g.id, self.groups))) > 0
@@ -107,6 +111,8 @@ class Identity(EntityDatamodel):
 
 def identity_instance(data:dict, endpoints:dict|None = None) -> Identity:
     data = {key: value for key, value in data.items() if key in Identity.__annotations__}
+    if 'pesel' not in data:
+        data['pesel'] = None
     if data.get('job_position'):
         data['job_position'] = IdentityRole(**data["job_position"])
     if data.get('roles'):

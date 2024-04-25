@@ -29,3 +29,4 @@ __pycache__/
 .env.local
 
 src/main.py
+src/run.sh

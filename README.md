@@ -2,16 +2,17 @@
 
 ## Installation
 ```bash
-pip install git+https://github.com/uwmolsztyn/uidm_client.git@0.9
+pip install git+https://github.com/uwmolsztyn/uidm_client.git@0.10
 ```
 
 ## Examples
 
-To use the UIDM Client you have to provide two environment variables:
+To use the UIDM Client you have to provide three environment variables:
 
 ```bash
 export UIDM_API=_uidm_url_
 export UIDM_ACCESS_TOKEN=__access_token__
+export UIDM_EMPLOYEE_DOMAIN=example.org
 ```
 
 ### Identities
